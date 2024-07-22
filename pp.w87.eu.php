@@ -3,7 +3,7 @@
  * Pleasant PHP — a set of useful methods and variables.
  *
  * @package   pp
- * @version   2024.07.19
+ * @version   2024.07.22
  * @see       https://app.w87.eu/codeInfo?app=pp.w87.eu&file=pp.w87.eu.php
  * @license   https://creativecommons.org/licenses/by-sa/4.0/ CC BY-SA 4.0
  * @author    Walerian Walawski <https://w87.eu/?contact>
@@ -15,11 +15,14 @@ class PP
 {
     public const MB = 1048576;
     public const GB = 1073741824;
-    public const LOGS_PATH = '/var/logs/pp';
+    public const PASSWORD_SALT = 'Łódź ęąćŹŻŁóśń LOL :-)';
+    public const DAYS_IN_SEC = [1 => 86400, 2 => 172800, 3 => 259200, 4 => 345600, 5 => 432000, 6 => 518400, 7 => 604800, 8 => 691200, 9 => 777600, 10 => 864000, 11 => 940800, 12 => 1020800, 13 => 1106400, 14 => 1209600, 15 => 1296000, 30 => 2592000, 60 => 5184000, 90 => 7776000, 100 => 8640000];
+    public const WHITE_CHARS = ["\n", "\r", "\t", ' ', ' '];
+    public const BYTES_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
 
     public static $conf = [
             'app'       => 'test',
-            'logsPath'   => __DIR__,
+            'logsPath'  => __DIR__,
             'mail'  => [
                 'reName'  => 'SublimeStar.com',
                 'reEmail' => 'help@sublimestar.com',
@@ -42,9 +45,9 @@ https://sublimestar.com/
         ],
         'db' => [
             'connect' => 'mysql:unix_socket=/var/run/mysqld/mysqld.sock',
-            'user' => 'root',
-            'pass' => '',
-            'name' => 'pp',
+            'user'    => 'root',
+            'pass'    => '',
+            'name'    => 'pp',
             'charset' => 'utf8',
         ]
     ];
@@ -52,29 +55,30 @@ https://sublimestar.com/
     public function __construct($conf=[]){
         self::$conf = array_merge(self::$conf, $conf);
 
-		$this->unixTime      = $_SERVER['REQUEST_TIME'];            // request
-		$this->unixTimeFloat = $_SERVER['REQUEST_TIME_FLOAT']; // microsecond
-		
-		// -*- Initializing: General purpose var. ------------------------------------------------------------------------------
-		$this->time = date(self::$conf['date']['time']);
-		$this->date = date(self::$conf['date']['full']);
-		$this->year = date(self::$conf['date']['year']);
-		$this->dt   = "{$this->date} {$this->time}";
-		$this->salt = 'Łódź ęąćŹŻŁóśń LOL :-)';
-		$this->path = realpath('.');
+        // Unix timestamp
+        $this->unixTime      = $_SERVER['REQUEST_TIME'];       // time() equivalent
+        $this->unixTimeFloat = $_SERVER['REQUEST_TIME_FLOAT']; // microtime() equivalent
+        
+        // Other date & time
+        $this->time = date(self::$conf['date']['time']);
+        $this->date = date(self::$conf['date']['full']);
+        $this->year = date(self::$conf['date']['year']);
+        $this->dt   = "{$this->date} {$this->time}";
 
-		$this->daysInSec = [1 => 86400, 2 => 172800, 3 => 259200, 7 => 604800, 10 => 864000, 15 => 1296000, 30 => 2592000, 90 => 7776000, 100 => 8640000];
-		$this->whiteChars = ["\n", "\r", "\t", ' ', ' '];
-		$this->userIp = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'];
-		$this->proto = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '' === '' ? $_SERVER['REQUEST_SCHEME'] : $_SERVER['HTTP_X_FORWARDED_PROTO'];
-		$this->method = $_SERVER['REQUEST_METHOD'];
-		$this->uri = $_SERVER['REQUEST_URI'];
-		$this->ref = $_SERVER['HTTP_REFERER'] ?? '';
-		$this->uas = $_SERVER['HTTP_USER_AGENT'];
-		$this->host = $_SERVER['HTTP_HOST'];
-		$this->base = "{$this->proto}://{$this->host}";
-		$this->url = "{$this->base}{$this->uri}";
-		$this->request = "{$this->proto} {$this->method} {$this->url} (port {$_SERVER['SERVER_PORT']})";
+        // HTTP request
+        $this->userIp  = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'];
+        $this->proto   = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '' === '' ? $_SERVER['REQUEST_SCHEME'] : $_SERVER['HTTP_X_FORWARDED_PROTO'];
+        $this->method  = $_SERVER['REQUEST_METHOD'];
+        $this->uri     = $_SERVER['REQUEST_URI'];
+        $this->ref     = $_SERVER['HTTP_REFERER'] ?? '';
+        $this->uas     = $_SERVER['HTTP_USER_AGENT'];
+        $this->host    = $_SERVER['HTTP_HOST'];
+        $this->base    = "{$this->proto}://{$this->host}";
+        $this->url     = "{$this->base}{$this->uri}";
+        $this->request = "{$this->proto} {$this->method} {$this->url} (port {$_SERVER['SERVER_PORT']})";
+
+        // Base path
+        $this->path = realpath('.');
 
         return $this;
     }
@@ -95,32 +99,6 @@ https://sublimestar.com/
             return self::$conf[$key];
         }
     }
-
-    /** ------------------------------------------------- https://w87.eu/?v=2023.08.27 ----
-     * Example vanilla conf:
-     * ------------------------------------------------------------------------------------
-        
-        PP::conf('app', [
-            'id'         => 'test',
-            'date' => 'Y-m-d H:i:s',
-            'logsPath'   => __DIR__,
-            'mail'  => [
-                    'reName'  => 'SublimeStar.com',
-                    'reEmail' => 'help@sublimestar.com',
-                    'from'    => 'notify@sublimestar.com',
-                    'footer'  => '
-
--- 
-Kind regards,
-Walerian Walawski
-https://sublimestar.com/
-
-',
-                    'notify'  => 'SublimeStar <test.notification@sublimestar.com>',
-                ]
-            ]);
-    
-     */
 
     /**
      * Memcached: new instance (persistent)
@@ -317,11 +295,10 @@ X-MTK: https://api.sublimestar.com/mtk.out?in='.$id.'-ppW87euEmail-'.$_SERVER['R
      */
 
     public static function humanBytes($filesize, $dec = 2): string {
-        $units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
         for($i = 0; $filesize >= 1024; $i++){
             $filesize /= 1024;
         }
-        return round($filesize, $dec).' '.$units[$i];
+        return round($filesize, $dec).' '.self::BYTES_UNITS[$i];
     }
 
     public static function humanDate($timestamp): string {
@@ -388,7 +365,6 @@ X-MTK: https://api.sublimestar.com/mtk.out?in='.$id.'-ppW87euEmail-'.$_SERVER['R
     public static function converStringSizeToInt($from) {
         $from   = str_replace([',', 'BYTES', 'BYTE'], ['.', 'B', 'B'], strtoupper($from));
         $from   = preg_replace('`[^\dBKMGTP.]`', '', $from);
-        $units  = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
         $number = substr($from, 0, -2);
         $suffix = substr($from, -2);
 
@@ -397,7 +373,7 @@ X-MTK: https://api.sublimestar.com/mtk.out?in='.$id.'-ppW87euEmail-'.$_SERVER['R
             return preg_replace('/[^\d]/', '', $from);
         }
 
-        $exponent = array_flip($units)[$suffix] ?? null;
+        $exponent = array_flip(self::BYTES_UNITS)[$suffix] ?? null;
         if($exponent === null){
             return null;
         }
@@ -430,8 +406,8 @@ X-MTK: https://api.sublimestar.com/mtk.out?in='.$id.'-ppW87euEmail-'.$_SERVER['R
     // TODO: improve!!!
     
     public static function db($sql, $args = null){
-        global $PPdb;
-        return $PPdb->run($sql, $args);
+        global $ppDb;
+        return $ppDb->run($sql, $args);
     }
 
 }
@@ -470,14 +446,14 @@ class PPdb extends PDO{
  * Example of using PPdb:
  * ------------------------------------------------------------------------------------
 try {
-    $PPdb = new PPdb(PP::$conf['db']['connect'].';dbname='.PP::$conf['db']['name'].';charset='.PP::$conf['db']['charset'], PP::$conf['db']['user'], PP::$conf['db']['pass'], [
+    $ppDb = new PPdb(PP::$conf['db']['connect'].';dbname='.PP::$conf['db']['name'].';charset='.PP::$conf['db']['charset'], PP::$conf['db']['user'], PP::$conf['db']['pass'], [
         PDO::ATTR_ERRMODE                  => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE       => PDO::FETCH_ASSOC,
         PDO::ATTR_PERSISTENT               => true,
         PDO::ATTR_EMULATE_PREPARES         => false,
         PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
     ]);
-    $PPdb->exec('USE '.PP::$conf['db']['name']);
+    $ppDb->exec('USE '.PP::$conf['db']['name']);
 }catch(Exception $e){
     PP::log(__FILE__.':'. __LINE__, 'db-error', "PPdb Connection Exception: ".$e->getMessage());
 }
