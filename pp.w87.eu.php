@@ -389,12 +389,12 @@ X-MTK: https://api.sublimestar.com/mtk.out?in='.$id.'-ppW87euEmail-'.$_SERVER['R
      * @param  string  $name   — key name
      * @param  mixed   $value  — if not null, global var. must have this value
      * @param  integer $length — if not null, global var. must have this string length
-     * @param  string  $type   — if not null, global var. must pass validation for (numeric | email)
+     * @param  string  $type   — if not null, global var. must pass validation for type numeric | email
      * 
      * @return string|null
      */
 
-    function _(string $array, string $name='', $value=null, $length=null, $type=null){
+    public static function _(string $array, string $name='', $value=null, $length=null, $type=null){
         $globals = [
             'get' => $_GET,
             'post' => $_POST,
