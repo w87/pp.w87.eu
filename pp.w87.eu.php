@@ -3,11 +3,12 @@
  * Pleasant PHP — a set of useful methods and variables.
  *
  * @package   pp
- * @version   2024.07.22
+ * @version   2024.07.31
  * @see       https://app.w87.eu/codeInfo?app=pp.w87.eu&file=pp.w87.eu.php
- * @license   https://creativecommons.org/licenses/by-sa/4.0/ CC BY-SA 4.0
+ * @see       https://pp.w87.eu/
  * @author    Walerian Walawski <https://w87.eu/?contact>
  * @link      https://w87.eu/
+ * @license   https://creativecommons.org/licenses/by-sa/4.0/ CC BY-SA 4.0
  * @copyright 20016-2024 SublimeStar.com Walerian Walawski © All Rights Reserved.
  */
 
@@ -56,14 +57,14 @@ https://sublimestar.com/
         self::$conf = array_merge(self::$conf, $conf);
 
         // Unix timestamp
-        $this->unixTime      = $_SERVER['REQUEST_TIME'];       // time() equivalent
-        $this->unixTimeFloat = $_SERVER['REQUEST_TIME_FLOAT']; // microtime() equivalent
-        
-        // Other date & time
-        $this->time = date(self::$conf['date']['time']);
-        $this->date = date(self::$conf['date']['full']);
-        $this->year = date(self::$conf['date']['year']);
-        $this->dt   = "{$this->date} {$this->time}";
+		$this->unixTime      = $_SERVER['REQUEST_TIME'];       // time() equivalent
+		$this->unixTimeFloat = $_SERVER['REQUEST_TIME_FLOAT']; // microtime() equivalent
+		
+		// Other date & time
+		$this->time = date(self::$conf['date']['time']);
+		$this->date = date(self::$conf['date']['full']);
+		$this->year = date(self::$conf['date']['year']);
+		$this->dt   = "{$this->date} {$this->time}";
 
         // HTTP request
         $this->userIp  = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'];
@@ -380,30 +381,39 @@ X-MTK: https://api.sublimestar.com/mtk.out?in='.$id.'-ppW87euEmail-'.$_SERVER['R
 
         return round($number * (1024 ** $exponent));
     }
+    
+    /**
+     * Global vars. validation / getting
+     * 
+     * @param  string  $array  — which global?
+     * @param  string  $name   — key name
+     * @param  mixed   $value  — if not null, global var. must have this value
+     * @param  integer $length — if not null, global var. must have this string length
+     * @param  string  $type   — if not null, global var. must pass validation for (numeric | email)
+     * 
+     * @return string|null
+     */
 
-    /** ------------------------------------------------- https://w87.eu/?v=2024.04.06 ----
-     * Global vars.
-     * ------------------------------------------------------------------------------------ */
+    function _(string $array, string $name='', $value=null, $length=null, $type=null){
+        $globals = [
+            'get' => $_GET,
+            'post' => $_POST,
+            'files' => $_FILES,
+            'cookie' => $_COOKIE,
+            'session' => $_SESSION,
+        ];
 
-    public static function get($name='', $value=null, $length=null, $type=null){
-        if(!isset($_GET[$name])) return null;
-        if($value && $_GET[$name] != $value) return null;
-        if($length && mb_strlen($_GET[$name]) < $length) return null;
-        if($type && $type === 'numeric' && !is_numeric($_GET[$name])) return null;
-
-        return $_GET[$name];
+        if(!isset($globals[$array][$name])) return null;
+        if($value && $globals[$array][$name] != $value) return null;
+        if($length && mb_strlen($globals[$array][$name]) < $length) return null;
+        if($type && $type === 'numeric' && !is_numeric($globals[$array][$name])) return null;
+        if($type && $type === 'email' && (!filter_var($globals[$array][$name], FILTER_VALIDATE_EMAIL) || !checkdnsrr(explode('@', $globals[$array][$name])[1], 'MX')) ) return null;
+        // TODO: more types
+    
+        return $globals[$array][$name];
     }
 
-    public static function post($name='', $value=null, $length=null, $type=null){
-        if(!isset($_POST[$name])) return null;
-        if($value && $_POST[$name] != $value) return null;
-        if($length && mb_strlen($_POST[$name]) < $length) return null;
-        if($type && $type === 'numeric' && !is_numeric($_POST[$name])) return null;
-
-        return $_POST[$name];
-    }
-
-    // TODO: improve!!!
+    // TODO: extend
     
     public static function db($sql, $args = null){
         global $ppDb;
@@ -442,7 +452,7 @@ class PPdb extends PDO{
     }
 }
 
-/** ------------------------------------------------- https://w87.eu/?v=2023.08.23 ----
+/** ------------------------------------------------- https://w87.eu/?v=2024.02.23 ----
  * Example of using PPdb:
  * ------------------------------------------------------------------------------------
 try {
@@ -456,43 +466,5 @@ try {
     $ppDb->exec('USE '.PP::$conf['db']['name']);
 }catch(Exception $e){
     PP::log(__FILE__.':'. __LINE__, 'db-error', "PPdb Connection Exception: ".$e->getMessage());
-}
-*/
-
-/*
-
-function w87VarDump($var, $depth=1, $indentation=0): string{
-    $output = '';
-    
-    if(is_array($var)){
-        $output .= "[\n";
-        foreach($var as $key=>$value){
-            if(is_array($value)){
-                if($depth <= 0){
-                    return '';
-                }else{
-                    for($i=0;$i<$indentation;$i++){
-                        $output .= '    ';
-                    }
-                    $output .= "$key => [\n".w87VarDump($value, $depth-1, $indentation+1);
-                    for($i=0;$i<$indentation;$i++){
-                        $output .= '    ';
-                    }
-                    $output .= "],\n";
-                }
-            }else{
-                for($i=0;$i<$indentation;$i++){
-                    $output .= '    ';
-                }
-                $value = var_export($value, true);
-                $output .= "$key => $value,\n";
-            }
-        }
-        $output .= "],\n";
-    }else{
-        $output = var_export($var, true);
-    }
-    
-    return str_replace(["[\n]", '=> NULL,'], ['[]', '=> null,'], $output);
 }
 */
