@@ -405,7 +405,7 @@ X-MTK: https://api.sublimestar.com/mtk.out?in='.$id.'-ppW87euEmail-'.$_SERVER['R
 
         if(!isset($globals[$array][$name])) return null;
         if($value && $globals[$array][$name] != $value) return null;
-        if($length && mb_strlen($globals[$array][$name]) < $length) return null;
+        if($length && mb_strlen(trim($globals[$array][$name])) < $length) return null;
         if($type && $type === 'numeric' && !is_numeric($globals[$array][$name])) return null;
         if($type && $type === 'email' && (!filter_var($globals[$array][$name], FILTER_VALIDATE_EMAIL) || !checkdnsrr(explode('@', $globals[$array][$name])[1], 'MX')) ) return null;
         // TODO: more types
