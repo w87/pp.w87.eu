@@ -1,10 +1,5 @@
 <?php
-/** ____  _                            _     ____  _   _ ____   __        _____ _____           
- * |  _ \| | ___  __ _ ___  __ _ _ __ | |_  |  _ \| | | |  _ \  \ \      / ( _ )___  |___ _   _ 
- * | |_) | |/ _ \/ _` / __|/ _` | '_ \| __| | |_) | |_| | |_) |  \ \ /\ / // _ \  / // _ \ | | |
- * |  __/| |  __/ (_| \__ \ (_| | | | | |_  |  __/|  _  |  __/    \ V  V /| (_) |/ /|  __/ |_| |
- * |_|   |_|\___|\__,_|___/\__,_|_| |_|\__| |_|   |_| |_|_|        \_/\_/  \___//_/(_)___|\__,_|
- * 
+/**
  * Pleasant PHP — a set of useful methods and variables.
  *
  * @package   pp
@@ -67,7 +62,7 @@ https://sublimestar.com/
 		
 		// Other date & time
 		$this->time = date(self::$conf['date']['time']);
-		$this->date = date(self::$conf['date']['full']);
+		$this->date = date(self::$conf['date']['date']);
 		$this->year = date(self::$conf['date']['year']);
 		$this->dt   = "{$this->date} {$this->time}";
 
