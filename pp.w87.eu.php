@@ -3,13 +3,13 @@
  * Pleasant PHP — a set of useful methods and variables.
  *
  * @package   pp
- * @version   2024.07.31
+ * @version   2025.03.16
  * @see       https://app.w87.eu/codeInfo?app=pp.w87.eu&file=pp.w87.eu.php
  * @see       https://pp.w87.eu/
  * @author    Walerian Walawski <https://w87.eu/?contact>
  * @link      https://w87.eu/
  * @license   https://creativecommons.org/licenses/by-sa/4.0/ CC BY-SA 4.0
- * @copyright 20016-2024 SublimeStar.com Walerian Walawski © All Rights Reserved.
+ * @copyright 20016-2025 SublimeStar.com Walerian Walawski © All Rights Reserved.
  */
 
 class PP
@@ -22,9 +22,8 @@ class PP
     public const BYTES_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
 
     public static $conf = [
-            'app'       => 'test',
-            'logsPath'  => __DIR__,
-            'mail'  => [
+            'app'    => 'test',
+            'email'  => [
                 'reName'  => 'SublimeStar.com',
                 'reEmail' => 'help@sublimestar.com',
                 'from'    => 'notify@sublimestar.com',
@@ -50,21 +49,28 @@ https://sublimestar.com/
             'pass'    => '',
             'name'    => 'pp',
             'charset' => 'utf8',
+        ],
+        'path' => [ // No tailing slashes
+            'base'    => __DIR__,
+            'logs'    => __DIR__.'/logs',
+        ],
+        'debug' => [
+            'dbQuery' => false,
         ]
     ];
 
     public function __construct($conf=[]){
         self::$conf = array_merge(self::$conf, $conf);
 
-        // Unix timestamp
-		$this->unixTime      = $_SERVER['REQUEST_TIME'];       // time() equivalent
-		$this->unixTimeFloat = $_SERVER['REQUEST_TIME_FLOAT']; // microtime() equivalent
-		
-		// Other date & time
-		$this->time = date(self::$conf['date']['time']);
-		$this->date = date(self::$conf['date']['date']);
-		$this->year = date(self::$conf['date']['year']);
-		$this->dt   = "{$this->date} {$this->time}";
+        // Unix TimeStamp
+        $this->ts      = $_SERVER['REQUEST_TIME'];       // time() equivalent
+        $this->tsFloat = $_SERVER['REQUEST_TIME_FLOAT']; // microtime() equivalent
+        
+        // Other date & time
+        $this->time = date(self::$conf['date']['time']);
+        $this->date = date(self::$conf['date']['date']);
+        $this->year = date(self::$conf['date']['year']);
+        $this->dt   = "{$this->date} {$this->time}";
 
         // HTTP request
         $this->userIp  = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'];
@@ -76,9 +82,9 @@ https://sublimestar.com/
         $this->host    = $_SERVER['HTTP_HOST'];
         $this->base    = "{$this->proto}://{$this->host}";
         $this->url     = "{$this->base}{$this->uri}";
-        $this->request = "{$this->proto} {$this->method} {$this->url} (port {$_SERVER['SERVER_PORT']})";
+        $this->request = "{$this->method} {$this->url} (port {$_SERVER['SERVER_PORT']})";
 
-        // Base path
+        // Base path, symlink resolved (no tailing slash)
         $this->path = realpath('.');
 
         return $this;
@@ -108,7 +114,7 @@ https://sublimestar.com/
      */
     
     public static function mcNew($instance = null) {
-        $instance = null === $instance ? self::$conf['app']['id'] : $instance;
+        $instance = null === $instance ? self::$conf['app'] : $instance;
 
         $memCached = new Memcached($instance);
         $memCached->setOption(Memcached::OPT_LIBKETAMA_COMPATIBLE, true);
@@ -128,7 +134,7 @@ https://sublimestar.com/
     
     public static function mcGet($key){
         global $memCached;
-        return $memCached->get(self::$conf['app']['id'].":$key");
+        return $memCached->get(self::$conf['app'].":$key");
     }
     
     /**
@@ -141,7 +147,7 @@ https://sublimestar.com/
     
     public static function mcSet($key, $value='', $time=30){
         global $memCached;
-        return $memCached->set(self::$conf['app']['id'].":$key", $value, $_SERVER['REQUEST_TIME'] + $time);
+        return $memCached->set(self::$conf['app'].":$key", $value, $_SERVER['REQUEST_TIME'] + $time);
     }
     
     /**
@@ -154,7 +160,7 @@ https://sublimestar.com/
     
     public static function mcSetM($key, $value='', $time=5){
         global $memCached;
-        return $memCached->set(self::$conf['app']['id'].":$key", $value, ( $_SERVER['REQUEST_TIME'] + ( $time * 60 ) ) );
+        return $memCached->set(self::$conf['app'].":$key", $value, ( $_SERVER['REQUEST_TIME'] + ( $time * 60 ) ) );
     }
     
     /**
@@ -167,7 +173,7 @@ https://sublimestar.com/
     
     public static function mcSetH($key, $value='', $time=4){
         global $memCached;
-        return $memCached->set(self::$conf['app']['id'].":$key", $value, ( $_SERVER['REQUEST_TIME'] + ( $time * 3600 ) ) );
+        return $memCached->set(self::$conf['app'].":$key", $value, ( $_SERVER['REQUEST_TIME'] + ( $time * 3600 ) ) );
     }
     
     /**
@@ -180,7 +186,7 @@ https://sublimestar.com/
     
     public static function mcSetD($key, $value='', $time=7){
         global $memCached;
-        return $memCached->set(self::$conf['app']['id'].":$key", $value, ( $_SERVER['REQUEST_TIME'] + ( $time * 86400 ) ) );
+        return $memCached->set(self::$conf['app'].":$key", $value, ( $_SERVER['REQUEST_TIME'] + ( $time * 86400 ) ) );
     }
     
     /**
@@ -191,7 +197,7 @@ https://sublimestar.com/
     
     public static function mcDel($key){
         global $memCached;
-        return $memCached->delete(self::$conf['app']['id'].":$key");
+        return $memCached->delete(self::$conf['app'].":$key");
     }
     
     /**
@@ -201,12 +207,7 @@ https://sublimestar.com/
      */
     
     public static function email($name, $email, $subject, $content, $reName='', $reEmail='', $notify=''): bool{
-        if(!self::conf('app')){
-            return false;
-        }
-        
-        $id   = self::conf('app')['id'];
-        $conf = self::conf('app')['mail'];
+        $conf = self::$conf['email'];
 
         $nameRe = ($reName === '') ? $conf['reName'] : $reName;
         $reply  = ($reEmail === '') ? $conf['reEmail'] : $reEmail;
@@ -224,7 +225,7 @@ From: '.$from.'
 Reply-To: '.$reply.$notify.'
 User-Agent: pp.w87.eu Email
 X-Mailer: pp.w87.eu Email
-X-MTK: https://api.sublimestar.com/mtk.out?in='.$id.'-ppW87euEmail-'.$_SERVER['REQUEST_TIME']);
+X-MTK: https://api.sublimestar.com/mtk.out?in='.self::$conf['app'].'-ppW87euEmail-'.$_SERVER['REQUEST_TIME']);
     }
 
     public static function sleep($milisecondsMin = 1000, $milisecondsMax = null){
@@ -302,8 +303,8 @@ X-MTK: https://api.sublimestar.com/mtk.out?in='.$id.'-ppW87euEmail-'.$_SERVER['R
         return round($filesize, $dec).' '.self::BYTES_UNITS[$i];
     }
 
-    public static function humanDate($timestamp): string {
-        return date(self::$conf['date']['full'], $timestamp);
+    public static function humanDate($timestamp = null): string {
+        return date(self::$conf['date']['full'], $timestamp ?? $_SERVER['REQUEST_TIME']);
     }
 
     /**
@@ -353,7 +354,7 @@ X-MTK: https://api.sublimestar.com/mtk.out?in='.$id.'-ppW87euEmail-'.$_SERVER['R
     public static function log($file, $type, $info, $export = []): int {
         $date = date(self::$conf['date']['full']);
         $dump = empty($export) ? '' : var_export($export, true)."\n";
-        return file_put_contents(self::$conf['app']['path']['logs']."/$type.log", "$date → $info\n$file\n$dump\n", FILE_APPEND);
+        return file_put_contents(self::$conf['path']['logs']."/$type.log", "$date → $info\n$file\n$dump\n", FILE_APPEND);
     }
 
     /**
@@ -400,7 +401,7 @@ X-MTK: https://api.sublimestar.com/mtk.out?in='.$id.'-ppW87euEmail-'.$_SERVER['R
             'post' => $_POST,
             'files' => $_FILES,
             'cookie' => $_COOKIE,
-            'session' => $_SESSION,
+            'session' => $_SESSION ?? [], // Session may not be started
         ];
 
         if(!isset($globals[$array][$name])) return null;
@@ -427,7 +428,7 @@ X-MTK: https://api.sublimestar.com/mtk.out?in='.$id.'-ppW87euEmail-'.$_SERVER['R
  * ------------------------------------------------------------------------------------ */
 
 class PPdb extends PDO{
-    public $prefix = '';
+    public static $prefix = '';
 
     public function run($sql, $args = null){
         try{
@@ -442,7 +443,7 @@ class PPdb extends PDO{
 
         }catch(Exception $e){
             PP::$conf['debug']['dbQuery'] ? PP::log(__FILE__.':'. __LINE__, 'db-error', "PPdb Exception
-            REQUEST: {$_SERVER['HTTP_HOST']}{$_SERVER['REQUEST_URI']}
+            REQUEST: {$_SERVER['REQUEST_METHOD']} {$_SERVER['HTTP_HOST']}{$_SERVER['REQUEST_URI']}
             QUERY:   $sql
             ERROR:   ".$e->getMessage()."
             ARGS:    ".str_replace(["\n  ", "\n", '  ', '  ', '  '], ' ', var_export($args, true))) : null;
@@ -452,9 +453,12 @@ class PPdb extends PDO{
     }
 }
 
-/** ------------------------------------------------- https://w87.eu/?v=2024.02.23 ----
- * Example of using PPdb:
+/** ------------------------------------------------- https://w87.eu/?v=2025.03.16 ----
+ * Example of use:
  * ------------------------------------------------------------------------------------
+
+// DB
+
 try {
     $ppDb = new PPdb(PP::$conf['db']['connect'].';dbname='.PP::$conf['db']['name'].';charset='.PP::$conf['db']['charset'], PP::$conf['db']['user'], PP::$conf['db']['pass'], [
         PDO::ATTR_ERRMODE                  => PDO::ERRMODE_EXCEPTION,
@@ -467,4 +471,13 @@ try {
 }catch(Exception $e){
     PP::log(__FILE__.':'. __LINE__, 'db-error', "PPdb Connection Exception: ".$e->getMessage());
 }
+
+// Some other examples:
+
+$pp = new PP(['app' => 'my-test-app']);
+echo $pp->request.'<br>';
+echo PP::humanDate().' '.PP::_('get', 'test');
+
+var_dump(PP::db('SELECT * FROM `announcements` LIMIT 3')->fetchAll());
+
 */
