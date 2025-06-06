@@ -3,7 +3,7 @@
  * Pleasant PHP — a set of useful methods and variables.
  *
  * @package   pp
- * @version   2025.03.16
+ * @version   2025.06.06
  * @see       https://app.w87.eu/codeInfo?app=pp.w87.eu&file=pp.w87.eu.php
  * @see       https://pp.w87.eu/
  * @author    Walerian Walawski <https://w87.eu/?contact>
@@ -408,6 +408,7 @@ X-MTK: https://api.sublimestar.com/mtk.out?in='.self::$conf['app'].'-ppW87euEmai
         if($value && $globals[$array][$name] != $value) return null;
         if($length && mb_strlen(trim($globals[$array][$name])) < $length) return null;
         if($type && $type === 'numeric' && !is_numeric($globals[$array][$name])) return null;
+        if($type && $type === 'domain' && !filter_var(gethostbyname($globals[$array][$name]), FILTER_VALIDATE_IP)) return null;
         if($type && $type === 'email' && (!filter_var($globals[$array][$name], FILTER_VALIDATE_EMAIL) || !checkdnsrr(explode('@', $globals[$array][$name])[1], 'MX')) ) return null;
         // TODO: more types
     
@@ -443,10 +444,10 @@ class PPdb extends PDO{
 
         }catch(Exception $e){
             PP::$conf['debug']['dbQuery'] ? PP::log(__FILE__.':'. __LINE__, 'db-error', "PPdb Exception
-            REQUEST: {$_SERVER['REQUEST_METHOD']} {$_SERVER['HTTP_HOST']}{$_SERVER['REQUEST_URI']}
-            QUERY:   $sql
-            ERROR:   ".$e->getMessage()."
-            ARGS:    ".str_replace(["\n  ", "\n", '  ', '  ', '  '], ' ', var_export($args, true))) : null;
+ERROR:   ".$e->getMessage()."
+REQUEST: {$_SERVER['REQUEST_METHOD']} {$_SERVER['HTTP_HOST']}{$_SERVER['REQUEST_URI']}
+QUERY:   $sql
+ARGS:    ".str_replace(["\n  ", "\n", '  ', '  ', '  '], ' ', var_export($args, true))) : null;
 
             return false;
         }
