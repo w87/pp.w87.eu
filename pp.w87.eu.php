@@ -3,7 +3,7 @@
  * Pleasant PHP — a set of useful methods and variables.
  *
  * @package   pp
- * @version   2025.06.06
+ * @version   2025.06.19
  * @see       https://app.w87.eu/codeInfo?app=pp.w87.eu&file=pp.w87.eu.php
  * @see       https://pp.w87.eu/
  * @author    Walerian Walawski <https://w87.eu/?contact>
@@ -454,7 +454,7 @@ ARGS:    ".str_replace(["\n  ", "\n", '  ', '  ', '  '], ' ', var_export($args, 
     }
 }
 
-/** ------------------------------------------------- https://w87.eu/?v=2025.03.16 ----
+/** ------------------------------------------------- https://w87.eu/?v=2025.06.19 ----
  * Example of use:
  * ------------------------------------------------------------------------------------
 
@@ -467,6 +467,7 @@ try {
         PDO::ATTR_PERSISTENT               => true,
         PDO::ATTR_EMULATE_PREPARES         => false,
         PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
+        PDO::MYSQL_ATTR_FOUND_ROWS         => true
     ]);
     $ppDb->exec('USE '.PP::$conf['db']['name']);
 }catch(Exception $e){
