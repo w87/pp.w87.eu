@@ -2,8 +2,8 @@
 /**
  * Pleasant PHP — a set of useful methods and variables.
  *
- * @package   pp
- * @version   2025.06.19
+ * @package   pp.w87.eu
+ * @version   2025.06.28
  * @see       https://app.w87.eu/codeInfo?app=pp.w87.eu&file=pp.w87.eu.php
  * @see       https://pp.w87.eu/
  * @author    Walerian Walawski <https://w87.eu/?contact>
@@ -232,12 +232,6 @@ X-MTK: https://api.sublimestar.com/mtk.out?in='.self::$conf['app'].'-ppW87euEmai
         return usleep($milisecondsMax === null ? $milisecondsMin : rand($milisecondsMin, $milisecondsMax));
     }
 
-    public static function var($var, $compact = false, $html = false): string {
-        return $compact
-        ? str_replace("),\n", "\n", str_replace(["\r", "array (\n", "\n)"], '', var_export($var, true)))
-        : var_export($var, true);
-    }
-
     /** ------------------------------------------------- https://w87.eu/?v=2023.08.20 ----
      * Texts
      * ------------------------------------------------------------------------------------ */
@@ -341,6 +335,25 @@ X-MTK: https://api.sublimestar.com/mtk.out?in='.self::$conf['app'].'-ppW87euEmai
     }
 
     /**
+     * Compact version of function var_export (for logs etc.)
+     * 
+     * @param  mixed $var
+     * @param  bool  $noNewLines — even more compact version (without newlines)
+     * 
+     * @return string
+     */
+    public static function var($var, $noNewLines = false): string {
+        if($noNewLines){
+            $from = ["\t", "\r", "\n", '   ', '  ', '  ', '  ', '  ', "\n ", ", )"];
+            $to   = [' ',  '',   ' ',  ' ',   ' ',  ' ',  ' ',  ' ',  "\n",  ')'];
+        }else{
+            $from = ["\t", "\r", "=> \n", "array (\n", "\n)", '   ', '  ', '  ', '  ', '  ', '  ', "\n ", ",\n)", ',)'];
+            $to   = [' ',  '',   '=> ',   'array (',   ') ',  ' ',   ' ',  ' ',  ' ',  ' ',  ' ',  "\n",  ')',    ')'];
+        }
+        return trim(str_replace($from, $to, var_export($var, true)), " \n\r\t\v\0,");
+    }
+
+    /**
      * Logging
      * 
      * @param  string $file   — use __FILE__.':'. __LINE__
@@ -353,7 +366,7 @@ X-MTK: https://api.sublimestar.com/mtk.out?in='.self::$conf['app'].'-ppW87euEmai
 
     public static function log($file, $type, $info, $export = []): int {
         $date = date(self::$conf['date']['full']);
-        $dump = empty($export) ? '' : var_export($export, true)."\n";
+        $dump = empty($export) ? '' : self::var($export)."\n";
         return file_put_contents(self::$conf['path']['logs']."/$type.log", "$date → $info\n$file\n$dump\n", FILE_APPEND);
     }
 
@@ -443,11 +456,12 @@ class PPdb extends PDO{
             return $stmt;
 
         }catch(Exception $e){
-            PP::$conf['debug']['dbQuery'] ? PP::log(__FILE__.':'. __LINE__, 'db-error', "PPdb Exception
+            if(PP::$conf['debug']['dbQuery'])
+                PP::log(__FILE__.':'. __LINE__, 'db-error', "PPdb Exception
 ERROR:   ".$e->getMessage()."
 REQUEST: {$_SERVER['REQUEST_METHOD']} {$_SERVER['HTTP_HOST']}{$_SERVER['REQUEST_URI']}
 QUERY:   $sql
-ARGS:    ".str_replace(["\n  ", "\n", '  ', '  ', '  '], ' ', var_export($args, true))) : null;
+ARGS:    ".PP::var($args, true));
 
             return false;
         }
