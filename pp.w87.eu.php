@@ -2,14 +2,14 @@
 /**
  * Pleasant PHP — a set of useful methods and variables.
  *
- * @package   pp.w87.eu
- * @version   2025.06.28
+ * @package   pp
+ * @version   2025.07.05
  * @see       https://app.w87.eu/codeInfo?app=pp.w87.eu&file=pp.w87.eu.php
  * @see       https://pp.w87.eu/
  * @author    Walerian Walawski <https://w87.eu/?contact>
  * @link      https://w87.eu/
  * @license   https://creativecommons.org/licenses/by-sa/4.0/ CC BY-SA 4.0
- * @copyright 20016-2025 SublimeStar.com Walerian Walawski © All Rights Reserved.
+ * @copyright 2016-2025 SublimeStar.com Walerian Walawski © All Rights Reserved.
  */
 
 class PP
@@ -74,7 +74,7 @@ https://sublimestar.com/
 
         // HTTP request
         $this->userIp  = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'];
-        $this->proto   = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '' === '' ? $_SERVER['REQUEST_SCHEME'] : $_SERVER['HTTP_X_FORWARDED_PROTO'];
+        $this->proto   = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? $_SERVER['REQUEST_SCHEME'];
         $this->method  = $_SERVER['REQUEST_METHOD'];
         $this->uri     = $_SERVER['REQUEST_URI'];
         $this->ref     = $_SERVER['HTTP_REFERER'] ?? '';
@@ -235,6 +235,17 @@ X-MTK: https://api.sublimestar.com/mtk.out?in='.self::$conf['app'].'-ppW87euEmai
     /** ------------------------------------------------- https://w87.eu/?v=2023.08.20 ----
      * Texts
      * ------------------------------------------------------------------------------------ */
+    
+    /**
+     * Strip whitespace (or other characters) from the beginning and end of a string and all repeated spaces in it.
+     * 
+     * @param  string $string — string to trim
+     * @return string
+     */
+
+    public static function trim(string $string, string $characters = " \n\r\t\v\0"): string {
+        return trim(preg_replace('`\s\s+`', ' ', $string), $characters);
+    }
 
     public static function shortenStr($str, $limit, $start = 0, $sign = '...'): string {
         return mb_strlen($str) > $limit ? mb_substr($str, $start, ($limit - 1)) . $sign : ($start ? mb_substr($str, $start) : $str);
@@ -428,21 +439,36 @@ X-MTK: https://api.sublimestar.com/mtk.out?in='.self::$conf['app'].'-ppW87euEmai
         return $globals[$array][$name];
     }
 
-    // TODO: extend
+    // TODO: add insert, update, ID, count and delete wrappers for the DB
     
-    public static function db($sql, $args = null){
+    public static function db(string $sql, array|null $args = null){
         global $ppDb;
         return $ppDb->run($sql, $args);
+    }
+    
+    public static function dbOne(string $sql, array|null $args = null, $column = 0){
+        global $ppDb;
+        return $ppDb->run($sql, $args)->fetchColumn($column);
+    }
+    
+    public static function dbRow(string $sql, array|null $args = null, int $mode = PDO::FETCH_DEFAULT, int $cursorOrientation = PDO::FETCH_ORI_NEXT, int $cursorOffset = 0){
+        global $ppDb;
+        return $ppDb->run($sql, $args)->fetch($mode, $cursorOrientation, $cursorOffset);
+    }
+    
+    public static function dbAll(string $sql, array|null $args = null, int $mode = PDO::FETCH_DEFAULT){
+        global $ppDb;
+        return $ppDb->run($sql, $args)->fetchAll($mode);
     }
 
 }
 
-/** ------------------------------------------------- https://w87.eu/?v=2023.08.22 ----
+/** ------------------------------------------------- https://w87.eu/?v=2025.07.04 ----
  * Database (PDO)
  * ------------------------------------------------------------------------------------ */
 
 class PPdb extends PDO{
-    public static $prefix = '';
+    public $prefix = '';
 
     public function run($sql, $args = null){
         try{
@@ -468,7 +494,7 @@ ARGS:    ".PP::var($args, true));
     }
 }
 
-/** ------------------------------------------------- https://w87.eu/?v=2025.06.19 ----
+/** ------------------------------------------------- https://w87.eu/?v=2025.07.05 ----
  * Example of use:
  * ------------------------------------------------------------------------------------
 
@@ -494,6 +520,6 @@ $pp = new PP(['app' => 'my-test-app']);
 echo $pp->request.'<br>';
 echo PP::humanDate().' '.PP::_('get', 'test');
 
-var_dump(PP::db('SELECT * FROM `announcements` LIMIT 3')->fetchAll());
+var_dump(PP::dbAll('SELECT * FROM `announcements` LIMIT 3'));
 
 */
