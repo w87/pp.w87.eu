@@ -3,7 +3,7 @@
  * Pleasant PHP — a set of useful methods and variables.
  *
  * @package   pp
- * @version   2025.07.05
+ * @version   2025.07.06
  * @see       https://app.w87.eu/codeInfo?app=pp.w87.eu&file=pp.w87.eu.php
  * @see       https://pp.w87.eu/
  * @author    Walerian Walawski <https://w87.eu/?contact>
@@ -439,7 +439,63 @@ X-MTK: https://api.sublimestar.com/mtk.out?in='.self::$conf['app'].'-ppW87euEmai
         return $globals[$array][$name];
     }
 
-    // TODO: add insert, update, ID, count and delete wrappers for the DB
+    /** ------------------------------------------------- https://w87.eu/?v=2025.07.06 ----
+     * Displaying text
+     * ------------------------------------------------------------------------------------ */
+    
+    /**
+     * Format text for debug title, output example ($length = 64):
+     * ----------------------------------------------------------------
+     * --- String1                                          String2 ---
+     * ----------------------------------------------------------------
+     * 
+     * @param  string  $string1
+     * @param  string  $string2
+     * @param  integer $length — max. line length
+     * 
+     * @return string
+     */
+    public static function textTitle(string $string1 = 'Blank', string $string2 = 'None', int $length = 128) {
+        $halfLength  = floor($length / 2);
+        $string1     = self::shortenStr("--- $string1 ", $halfLength);
+        $string2     = self::shortenStr(" $string2 ---", $halfLength);
+        $fill_length = $length - (strlen($string1) + strlen($string2));
+        return str_repeat('-', $length)."\n$string1".str_repeat(' ', $fill_length)."$string2\n".str_repeat('-', $length)."\n";
+    }
+
+    /**
+     * Display debug — start debugging session. Returns filler to be used with each echo to push OB to the client.
+     * 
+     * @param  string  $title
+     * @param  string  $subtitle
+     * 
+     * @return string
+     */
+    public static function displayDebug(string $title, string $subtitle){
+        // PHP settings
+        error_reporting(E_ALL);
+        ini_set('display_errors', 1);
+        ini_set('display_startup_errors', 1);
+        ini_set('max_execution_time', 600);
+        ini_set('max_input_time', 600);
+
+        // Common headers
+        header('Cache-Control: no-cache, no-store, max-age=0, must-revalidate, post-check=0, pre-check=0', true);
+        header('Content-Type: text/plain; charset=UTF-8', true);
+        header('Content-Encoding: none', true); // ← important for OB
+
+        // Turn OB on, display title + return a string used with each echo to force OB flush
+        ob_implicit_flush();
+        $obPush = str_repeat(' ', 4096);
+        echo self::textTitle($title, $subtitle).$obPush;
+
+        return $obPush;
+    }
+
+    /** ------------------------------------------------- https://w87.eu/?v=2025.07.06 ----
+     * DataBase wrappers
+     * @TODO: add methods (wrappers) for: insert, update, ID, count, delete
+     * ------------------------------------------------------------------------------------ */
     
     public static function db(string $sql, array|null $args = null){
         global $ppDb;
