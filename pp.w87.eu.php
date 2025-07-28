@@ -1,9 +1,14 @@
 <?php
 /**
- * Pleasant PHP — a set of useful methods and variables.
- *
- * @package   pp
- * @version   2025.07.06
+ * Pleasant PHP       ___ ____          
+ *  _ __ _ __ __ __ _( _ )__  |___ _  _ 
+ * | '_ \ '_ \\ V  V / _ \ / // -_) || |
+ * | .__/ .__(_)_/\_/\___//_(_)___|\_,_|
+ * |_|==|_|=============================
+ * A set of useful methods and variables
+ * 
+ * @package   pp.w87.eu
+ * @version   2025.07.28
  * @see       https://app.w87.eu/codeInfo?app=pp.w87.eu&file=pp.w87.eu.php
  * @see       https://pp.w87.eu/
  * @author    Walerian Walawski <https://w87.eu/?contact>
@@ -17,7 +22,7 @@ class PP
     public const MB = 1048576;
     public const GB = 1073741824;
     public const PASSWORD_SALT = 'Łódź ęąćŹŻŁóśń LOL :-)';
-    public const DAYS_IN_SEC = [1 => 86400, 2 => 172800, 3 => 259200, 4 => 345600, 5 => 432000, 6 => 518400, 7 => 604800, 8 => 691200, 9 => 777600, 10 => 864000, 11 => 940800, 12 => 1020800, 13 => 1106400, 14 => 1209600, 15 => 1296000, 30 => 2592000, 60 => 5184000, 90 => 7776000, 100 => 8640000];
+    public const DAYS_IN_SEC = [1 => 86400, 2 => 172800, 3 => 259200, 4 => 345600, 5 => 432000, 6 => 518400, 7 => 604800, 8 => 691200, 9 => 777600, 10 => 864000, 11 => 940800, 12 => 1020800, 13 => 1106400, 14 => 1209600, 15 => 1296000, 30 => 2592000, 60 => 5184000, 90 => 7776000, 100 => 8640000, 180 => 15552000, 365 => 31536000];
     public const WHITE_CHARS = ["\n", "\r", "\t", ' ', ' '];
     public const BYTES_UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
 
@@ -43,8 +48,8 @@ https://sublimestar.com/
             'date' => 'Y-m-d',
             'full' => 'Y-m-d H:i:s',
         ],
-        'db' => [
-            'connect' => 'mysql:unix_socket=/var/run/mysqld/mysqld.sock',
+        'db' => [ // Default DB connection
+            'connect' => 'mysql:unix_socket=/var/run/mysqld/mysqld.sock', // ← A host or Unix socket
             'user'    => 'root',
             'pass'    => '',
             'name'    => 'pp',
@@ -355,8 +360,8 @@ X-MTK: https://api.sublimestar.com/mtk.out?in='.self::$conf['app'].'-ppW87euEmai
      */
     public static function var($var, $noNewLines = false): string {
         if($noNewLines){
-            $from = ["\t", "\r", "\n", '   ', '  ', '  ', '  ', '  ', "\n ", ", )"];
-            $to   = [' ',  '',   ' ',  ' ',   ' ',  ' ',  ' ',  ' ',  "\n",  ')'];
+            $from = ["\t", "\r", "\n", '   ', '  ', '  ', '  ', '  ', '  ', ', )'];
+            $to   = [' ',  '',   ' ',  ' ',   ' ',  ' ',  ' ',  ' ',  ' ',  ')'];
         }else{
             $from = ["\t", "\r", "=> \n", "array (\n", "\n)", '   ', '  ', '  ', '  ', '  ', '  ', "\n ", ",\n)", ',)'];
             $to   = [' ',  '',   '=> ',   'array (',   ') ',  ' ',   ' ',  ' ',  ' ',  ' ',  ' ',  "\n",  ')',    ')'];
