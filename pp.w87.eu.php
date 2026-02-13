@@ -8,13 +8,13 @@
  * A set of useful methods and variables
  * 
  * @package   pp.w87.eu
- * @version   2025.07.28
+ * @version   2026.02.12
  * @see       https://app.w87.eu/codeInfo?app=pp.w87.eu&file=pp.w87.eu.php
  * @see       https://pp.w87.eu/
  * @author    Walerian Walawski <https://w87.eu/?contact>
  * @link      https://w87.eu/
  * @license   https://creativecommons.org/licenses/by-sa/4.0/ CC BY-SA 4.0
- * @copyright 2016-2025 SublimeStar.com Walerian Walawski © All Rights Reserved.
+ * @copyright 2016-2026 SublimeStar.com Walerian Walawski © All Rights Reserved.
  */
 
 class PP
@@ -54,6 +54,8 @@ https://sublimestar.com/
             'pass'    => '',
             'name'    => 'pp',
             'charset' => 'utf8',
+            'name'    => 'pp',
+            'prefix'  => '',
         ],
         'path' => [ // No tailing slashes
             'base'    => __DIR__,
@@ -244,11 +246,11 @@ X-MTK: https://api.sublimestar.com/mtk.out?in='.self::$conf['app'].'-ppW87euEmai
     /**
      * Strip whitespace (or other characters) from the beginning and end of a string and all repeated spaces in it.
      * 
-     * @param  string $string — string to trim
+     * @param  mixed $string — string to trim
      * @return string
      */
 
-    public static function trim(string $string, string $characters = " \n\r\t\v\0"): string {
+    public static function trim($string, string $characters = " \n\r\t\v\0"): string {
         return trim(preg_replace('`\s\s+`', ' ', $string), $characters);
     }
 
@@ -463,9 +465,10 @@ X-MTK: https://api.sublimestar.com/mtk.out?in='.self::$conf['app'].'-ppW87euEmai
     public static function textTitle(string $string1 = 'Blank', string $string2 = 'None', int $length = 128) {
         $halfLength  = floor($length / 2);
         $string1     = self::shortenStr("--- $string1 ", $halfLength);
-        $string2     = self::shortenStr(" $string2 ---", $halfLength);
-        $fill_length = $length - (strlen($string1) + strlen($string2));
-        return str_repeat('-', $length)."\n$string1".str_repeat(' ', $fill_length)."$string2\n".str_repeat('-', $length)."\n";
+        $string2     = self::shortenStr(" $string2", $halfLength - 4); // 4 is the length of " ---"
+        return str_repeat('-', $length)
+            . "\n$string1".str_repeat(' ', $length - strlen($string1.$string2))."$string2 ---\n"
+            . str_repeat('-', $length)."\n";
     }
 
     /**
@@ -497,34 +500,122 @@ X-MTK: https://api.sublimestar.com/mtk.out?in='.self::$conf['app'].'-ppW87euEmai
         return $obPush;
     }
 
-    /** ------------------------------------------------- https://w87.eu/?v=2025.07.06 ----
+    /** ------------------------------------------------- https://w87.eu/?v=2026.02.12 ----
      * DataBase wrappers
-     * @TODO: add methods (wrappers) for: insert, update, ID, count, delete
+     * 
+     * 👉 NOTE: all methods use global $ppDb, which should be set to an instance of PPdb.
+     *    This instance is included in a comment block at the end of this file.
      * ------------------------------------------------------------------------------------ */
     
+    // Run a DB query. Returns false on error or PDOStatement on success (even for non-SELECT queries).
     public static function db(string $sql, array|null $args = null){
         global $ppDb;
         return $ppDb->run($sql, $args);
     }
     
+    // Get a single value from DB (first column of the first row). Returns false on error or the value on success.
     public static function dbOne(string $sql, array|null $args = null, $column = 0){
         global $ppDb;
         return $ppDb->run($sql, $args)->fetchColumn($column);
     }
     
+    // Get a single row from DB. Returns false on error or the row (array) on success.
     public static function dbRow(string $sql, array|null $args = null, int $mode = PDO::FETCH_DEFAULT, int $cursorOrientation = PDO::FETCH_ORI_NEXT, int $cursorOffset = 0){
         global $ppDb;
         return $ppDb->run($sql, $args)->fetch($mode, $cursorOrientation, $cursorOffset);
     }
     
+    // Get multiple rows from DB. Returns false on error or the rows (array of arrays) on success.
     public static function dbAll(string $sql, array|null $args = null, int $mode = PDO::FETCH_DEFAULT){
         global $ppDb;
         return $ppDb->run($sql, $args)->fetchAll($mode);
     }
 
+    /**
+     * Insert a record into DB and return last insert ID. Returns false on error.
+     * @param  string $table — table name without prefix (will be added automatically)
+     * @param  array  $data  — column => value pairs
+     * @return int|bool      — last insert ID or false on error
+     */
+    public static function dbInsert(string $table, array $data) {
+        global $ppDb;
+        $cols = array_keys($data);
+        $sql = "INSERT INTO `{$ppDb->prefix}{$table}`
+                (`" . implode('`, `', $cols) . '`) VALUES (' . implode(', ', array_fill(0, count($cols), '?')) . ')';
+        return $ppDb->run($sql, array_values($data)) ? $ppDb->lastInsertId() : false;
+    }
+
+    /**
+     * Update records in DB.
+     * @param  string $table — table name without prefix (will be added automatically)
+     * @param  array  $data  — column => value pairs to update
+     * @param  string $where — WHERE clause (without 'WHERE')
+     * @param  array  $whereArgs — values for placeholders in $where
+     * @return int|bool       — number of affected rows or false on error
+     */
+    public static function dbUpdate(string $table, array $data, string $where, array $whereArgs = []) {
+        global $ppDb;
+        $sql = "UPDATE `{$ppDb->prefix}{$table}`
+                SET `" . implode('` = ?, `', array_keys($data)) . "` = ? WHERE $where";
+        return $ppDb->run($sql, array_merge(array_values($data), $whereArgs))->rowCount();
+    }
+
+    /**
+     * Delete records from DB.
+     * @param  string $table — table name without prefix (will be added automatically)
+     * @param  string $where — WHERE clause (without 'WHERE')
+     * @param  array  $args  — values for placeholders in $where
+     * @return int|bool      — number of affected rows or false on error
+     */
+    public static function dbDelete(string $table, string $where, array $args = []) {
+        global $ppDb;
+        return $ppDb->run("DELETE FROM `{$ppDb->prefix}{$table}` WHERE $where", $args)->rowCount();
+    }
+
+    /**
+     * Get count of records in a table matching the condition.
+     * @param  string $table — table name without prefix (will be added automatically)
+     * @param  string $where — WHERE clause (without 'WHERE')
+     * @param  array  $args  — values for placeholders in $where
+     * @return int           — count of matching records
+     */
+    public static function dbCount(string $table, string $where = '1', array $args = []) {
+        global $ppDb;
+        return (int) self::dbOne("SELECT COUNT(*) FROM `{$ppDb->prefix}{$table}` WHERE $where", $args);
+    }
+
+    /**
+     * Get ID for record with given data or insert if doesn't exist yet and return new ID
+     * @param  string $table       — table name without prefix (will be added automatically)
+     * @param  array  $checkCols   — column => value pairs to check for existing record
+     * @param  array  $insertData  — column => value pairs to insert if no existing record is found (can be empty, then only $checkCols will be inserted)
+     * @return int|bool            — ID of existing or new record, or false on error
+     */
+    public static function dbIdOrInsert(string $table, array $checkCols, array $insertData = []) {
+        global $ppDb;
+        
+        // 1. Build WHERE clause to find existing record
+        $whereArr = [];
+        $checkArgs = [];
+        foreach ($checkCols as $k => $v) {
+            $whereArr[] = "`$k` = ?";
+            $checkArgs[] = $v;
+        }
+        $whereSql = implode(' AND ', $whereArr);
+
+        // 2. Try to get ID
+        $id = self::dbOne("SELECT `id` FROM `{$ppDb->prefix}{$table}` WHERE $whereSql", $checkArgs);
+        if ($id) return $id;
+
+        // 3. Insert and return new ID
+        return self::dbInsert($table, array_merge($checkCols, $insertData));
+    }
+
+    // @TODO: add dbUpsert / INSERT INTO ... ON DUPLICATE KEY UPDATE
+
 }
 
-/** ------------------------------------------------- https://w87.eu/?v=2025.07.04 ----
+/** ------------------------------------------------- https://w87.eu/?v=2026.02.12 ----
  * Database (PDO)
  * ------------------------------------------------------------------------------------ */
 
@@ -555,8 +646,8 @@ ARGS:    ".PP::var($args, true));
     }
 }
 
-/** ------------------------------------------------- https://w87.eu/?v=2025.07.05 ----
- * Example of use:
+/** ------------------------------------------------- https://w87.eu/?v=2026.02.12 ----
+ * ✅ Example of use:
  * ------------------------------------------------------------------------------------
 
 // DB
@@ -570,7 +661,10 @@ try {
         PDO::MYSQL_ATTR_USE_BUFFERED_QUERY => true,
         PDO::MYSQL_ATTR_FOUND_ROWS         => true
     ]);
-    $ppDb->exec('USE '.PP::$conf['db']['name']);
+    if($ppDb){
+        $ppDb->prefix = PP::$conf['db']['prefix'] ?? '';
+        $ppDb->exec('USE '.PP::$conf['db']['name']);
+    }
 }catch(Exception $e){
     PP::log(__FILE__.':'. __LINE__, 'db-error', "PPdb Connection Exception: ".$e->getMessage());
 }
